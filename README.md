@@ -1,6 +1,9 @@
 # slant-solver
  a slant solver! this thing solves slant
 
+# what is slant?
+- a puzzle in the same vein as sudoku!
+- https://en.wikipedia.org/wiki/Gokigen_Naname
 
 # TODO: 
 - do an http fetch of https://www.puzzle-slant.com, search for `<span id="puzzleID">` for the puzzle id, `var task = ` for the puzzle string format, and `hashedSolution: ` for the hashed solution to the puzzle. 
@@ -12,12 +15,13 @@
   - MSBuild is not specifically attached to Visual Studio, you can customize it!
   -  
 
-
+          
 # blog post:
 - slant is a fun but somewhat obscure puzzle (at least when compared with sudoku)
 - lines can be placed from top left to bottom right, or top right to bottom left.
 - each number can have 4 incoming or passing lines.
 - an "implied n" is a number that would satify n if there was a number there.
+
 
 # Algorithm Slant Patterns:
 - a zero must be on the edge and must have two items not touching it
