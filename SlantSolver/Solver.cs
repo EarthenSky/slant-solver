@@ -179,10 +179,58 @@ namespace SlantSolver
             return numIncoming;
         }
 
+        // TODO: do DFS, but cache nodes
         // determine if the current puzzle contains a loop of some kind
-        private bool ContainsLoop() {
-            // TODO: this
-            return true;
+        private bool ContainsLoop() 
+        {
+            // contains true if this tile has been part of a tree / cycle that has been checked.
+            bool[] gridCache = new bool[GridWidth() * GridHeight()];
+            Utils.Populate(gridCache, false);
+
+            for (uint y = 0; y < GridHeight(); y++) 
+            {
+                for (uint x = 0; x < GridWidth(); x++)
+                {
+                    bool hasBeenChecked = gridCache[x + y * GridWidth()];
+                    if (!hasBeenChecked && this.HasCycleDFS(gridCache, (x, y)))
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool HasCycleDFS(bool[] gridCache, (uint, uint) start) 
+        {
+            bool[] touched = new bool[GridWidth() * GridHeight()];
+            Utils.Populate(touched, false);
+
+            List<((uint, uint), (uint, uint))> stack = new List<((uint, uint), (uint, uint))>();
+            var startLower = (start.Item1 + 1, start.Item2 + 1);
+            stack.Add( (start, startLower) );
+            stack.Add( (startLower, start) );
+
+            while (stack.Count != 0) 
+            {
+                // TODO: find a c# stack ADT
+                // NOTE: currLower defines the direction
+                ((uint, uint) curr, (uint, uint) currLower) = stack[stack.Count - 1];
+                stack.RemoveAt(stack.Count - 1);
+
+                // add adjacent tiles if possible
+                byte currentTileKind = grid[curr.Item1 + curr.Item2 * GridWidth()];
+                if (currentTileKind == TOPLEFT)
+                {
+                    // TODO: add other tiles, if there's a duplicate, get rekt
+
+                }
+                else if (currentTileKind == TOPRIGHT) 
+                { 
+                
+                }
+            }
+
+            return false;
         }
         
         // returns true if all rules are satisfied

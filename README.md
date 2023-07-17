@@ -15,7 +15,12 @@
   - MSBuild is not specifically attached to Visual Studio, you can customize it!
   -  
 
-          
+      
+# Blog post:
+  -start by reading the file format -> I was unable to find a real description of the format, but I managed to figure it out based on looking at t afew examples
+  - next, we need to come up with a way to detecgt if the puzzle is solved or not. This is required in oredr to start wiht some brute force approaches. We can even count how many mistakes we catch.
+    - in order to detect if the puzzle is solved or not, we need to search for any cycles. The playing field has no cycles if it is a forest (that is a set of unconnected acylic graphs (trees))
+
 # blog post:
 - slant is a fun but somewhat obscure puzzle (at least when compared with sudoku)
 - lines can be placed from top left to bottom right, or top right to bottom left.
@@ -38,6 +43,7 @@
 
 - fully generalized: two 1s separated by n 2s, n>=0, makes a dome pattern. a 2 with a single incoming line in the opposite direction of the other item also counts as a 1. 
 - fully generalized: two 3s separated by n 2s, n>=0, makes a dome pattern. ditto, but with one passing line
+- a 3 with two inbound lines is a 1, the opposite is true about a 1 with two passing lines (is a 3).
 
 - if placing a single line causes a cycle somewhere, then the other line direction must be correct
 
