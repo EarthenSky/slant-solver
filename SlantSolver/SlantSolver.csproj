@@ -37,6 +37,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
+    <Compile Include="Puzzle.cs" />
     <Compile Include="Solver.cs" />
     <Compile Include="Types\Vec2.cs" />
     <Compile Include="Utils.cs" />

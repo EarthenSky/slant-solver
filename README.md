@@ -27,7 +27,6 @@
 - each number can have 4 incoming or passing lines.
 - an "implied n" is a number that would satify n if there was a number there.
 
-
 # Algorithm Slant Patterns:
 - a zero must be on the edge and must have two items not touching it
 - a 1 in the corner must have one incoming line

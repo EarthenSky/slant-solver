@@ -11,31 +11,55 @@ namespace SlantSolver
         [STAThread]
         static void Main(string[] args)
         {
-            Solver solver = new Solver((5, 5), "a1102a1f1a2b1c3b2a2a0a1110a");
-            solver.PrintPuzzle();
+            //Program.TestCycleDetection();
+            Program.TestSolver();
 
-            solver.SetGrid(new byte [] { 
+            // wait before exiting
+            var _ = Console.ReadLine();
+        }
+
+        static void TestCycleDetection() 
+        {
+            Console.WriteLine("TestCycleDetection:\n");
+
+            Puzzle puzzle = new Puzzle((5, 5), "a1102a1f1a2b1c3b2a2a0a1110a");
+            puzzle.Display();
+
+            puzzle.SetGrid(new byte[] {
                 1,1,1,2,1,
                 1,1,2,1,1,
                 1,2,2,1,2,
                 1,1,2,2,2,
                 2,2,2,2,1,
             });
-            Console.WriteLine("\nIsSolved: " + solver.IsSolved().ToString());
-            solver.PrintPuzzle();
-             
-            solver.SetGrid(new byte[] {
+            Console.WriteLine("\nIsSolved: " + new Solver(puzzle).IsSolved().ToString());
+            puzzle.Display();
+
+            puzzle.SetGrid(new byte[] {
                 1,1,1,2,1,
                 1,1,2,1,2,
                 1,2,2,1,2,
                 1,1,2,2,2,
                 2,2,2,2,1,
             });
-            Console.WriteLine("\nIsSolved: " + solver.IsSolved().ToString());
-            solver.PrintPuzzle();
+            Console.WriteLine("\nIsSolved: " + new Solver(puzzle).IsSolved().ToString());
+            puzzle.Display();
 
-            // wait before exiting
-            var _ = Console.ReadLine();
+            Console.WriteLine("\n\n");
+        }
+
+        static void TestSolver()
+        {
+            Console.WriteLine("TestSolver:\n");
+
+            Puzzle puzzle = new Puzzle((5, 5), "a1102a1f1a2b1c3b2a2a0a1110a");
+            puzzle.Display();
+
+            var solver = new Solver(puzzle);
+            Puzzle solvedPuzzle = solver.Solve();
+            solvedPuzzle.Display();
+
+            Console.WriteLine("\n\n");
         }
     }
 }

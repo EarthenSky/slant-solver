@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SlantSolver.Types
 {
-    struct Vec2
+    public struct Vec2
     {
         public uint x, y;
         public Vec2(uint x, uint y) => (this.x, this.y) = (x, y);
