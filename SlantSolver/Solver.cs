@@ -200,34 +200,208 @@ namespace SlantSolver
             return false;
         }
 
+        private bool TileAboveExists((uint, uint) tile) => tile.Item2 != 0;
+        private bool TileLeftExists((uint, uint) tile) => tile.Item1 != 0;
+        private bool TileRightExists((uint, uint) tile) => tile.Item1 != GridWidth() - 1;
+        private bool TileBelowExists((uint, uint) tile) => tile.Item2 != GridHeight() - 1;
+
+        private uint GridIndexOf((uint, uint) tile) => tile.Item1 + tile.Item2 * GridWidth();
+         
+        /// this function determines the kind of tile given the start & end points of a diagonal
+        private byte TileKind((uint, uint) first, (uint, uint) second) => grid[GridIndexOf(TilePosOf(first, second))];
+
+        /// This function takes a diagonal & turns it into the 'position' of the Tile the diagonal resides in
+        private (uint, uint) TilePosOf((uint, uint) first, (uint, uint) second)
+        {
+            if (first.Item1 > second.Item1 && first.Item2 > second.Item2)
+            {
+                return (second.Item1, second.Item2);
+            }
+            else if (first.Item1 < second.Item1 && first.Item2 < second.Item2)
+            {
+                return (first.Item1, first.Item2);
+            }
+            else if (first.Item1 > second.Item1 && first.Item2 < second.Item2)
+            {
+                return ((first.Item1 - 1), first.Item2);
+            }
+            else if (first.Item1 < second.Item1 && first.Item2 > second.Item2)
+            {
+                return ((second.Item1 - 1), second.Item2);
+            }
+            else
+            {
+                throw new Exception("first and second do not form a diagonal: " + first.ToString() + " & " + second.ToString());
+            }
+        }
+
+        /// This function takes the the start & end points of a diagonal, and determines if any other 
+        /// tiles are connected & unvisisted, adding them to the stack if so.
+        /// 
+        /// The return value represents whether a cycle has been detected or not
+        private bool CheckAdjacent(
+            List<((uint, uint), (uint, uint))> stack, 
+            List<(uint, uint)> visited, 
+            (uint, uint) curr, 
+            (uint, uint) next
+        ) {
+            // NOTE: there is probably some way to generalize this code better, but the fact that it's
+            // partially unrolled should count for a bit of performance!
+
+            // add adjacent tiles if possible
+            bool isNextBelow = next.Item2 > curr.Item2;
+            byte currentTileKind = TileKind(curr, next);
+            var tilePos = TilePosOf(curr, next);
+            if (currentTileKind == TOPLEFT && isNextBelow)
+            {
+                var below = (next.Item1 - 1, next.Item2);
+                var belowNext = (next.Item1 - 1, next.Item2 + 1);
+                if (TileBelowExists(tilePos) && grid[GridIndexOf(below)] == TOPRIGHT)
+                    if (visited.Contains(below))
+                        return true;
+                    else
+                        stack.Add((next, belowNext));
+
+                var right = (next.Item1, next.Item2 - 1);
+                var rightNext = (next.Item1 + 1, next.Item2 - 1);
+                if (TileRightExists(tilePos) && grid[GridIndexOf(right)] == TOPRIGHT)
+                    if (visited.Contains(right))
+                        return true;
+                    else
+                        stack.Add((next, rightNext));
+
+                var belowRight = (next.Item1, next.Item2);
+                var belowRightNext = (next.Item1 + 1, next.Item2 + 1);
+                if (TileBelowExists(tilePos) && TileRightExists(tilePos) && grid[GridIndexOf(belowRight)] == TOPLEFT)
+                    if (visited.Contains(belowRight))
+                        return true;
+                    else
+                        stack.Add((next, belowRightNext));
+            }
+            else if (currentTileKind == TOPLEFT && !isNextBelow)
+            {
+                var above = (next.Item1, next.Item2 - 1);
+                var aboveNext = (next.Item1 + 1, next.Item2 - 1);
+                if (TileAboveExists(tilePos) && grid[GridIndexOf(above)] == TOPRIGHT)
+                    if (visited.Contains(above))
+                        return true;
+                    else
+                        stack.Add((next, aboveNext));
+
+                var left = (next.Item1 - 1, next.Item2);
+                var leftNext = (next.Item1 - 1, next.Item2 + 1);
+                if (TileLeftExists(tilePos) && grid[GridIndexOf(left)] == TOPRIGHT)
+                    if (visited.Contains(left))
+                        return true;
+                    else
+                        stack.Add((next, leftNext));
+
+                var aboveLeft = (next.Item1 - 1, next.Item2 - 1);
+                var aboveLeftNext = (next.Item1 - 1, next.Item2 - 1);
+                if (TileAboveExists(tilePos) && TileLeftExists(tilePos) && grid[GridIndexOf(aboveLeft)] == TOPLEFT)
+                    if (visited.Contains(aboveLeft))
+                        return true;
+                    else
+                        stack.Add((next, aboveLeftNext));
+            }
+            else if (currentTileKind == TOPRIGHT && isNextBelow)
+            {
+                var below = (next.Item1, next.Item2);
+                var belowNext = (next.Item1 + 1, next.Item2 + 1);
+                if (TileBelowExists(tilePos) && grid[GridIndexOf(below)] == TOPLEFT)
+                    if (visited.Contains(below))
+                        return true;
+                    else
+                        stack.Add((next, belowNext));
+
+                var left = (next.Item1 - 1, next.Item2 - 1);
+                var leftNext = (next.Item1 - 1, next.Item2 - 1);
+                if (TileLeftExists(tilePos) && grid[GridIndexOf(left)] == TOPLEFT)
+                    if (visited.Contains(left))
+                        return true;
+                    else
+                        stack.Add((next, leftNext));
+
+                var belowLeft = (next.Item1 - 1, next.Item2);
+                var belowLeftNext = (next.Item1 - 1, next.Item2 + 1);
+                if (TileBelowExists(tilePos) && TileLeftExists(tilePos) && grid[GridIndexOf(belowLeft)] == TOPRIGHT)
+                    if (visited.Contains(belowLeft))
+                        return true;
+                    else
+                        stack.Add((next, belowLeftNext));
+            }
+            else if (currentTileKind == TOPRIGHT && !isNextBelow)
+            {
+                var above = (next.Item1 - 1, next.Item2 - 1);
+                var aboveNext = (next.Item1 - 1, next.Item2 - 1);
+                if (TileAboveExists(tilePos) && grid[GridIndexOf(above)] == TOPLEFT)
+                    if (visited.Contains(above))
+                        return true;
+                    else
+                        stack.Add((next, aboveNext));
+
+                var right = (next.Item1, next.Item2);
+                var rightNext = (next.Item1 + 1, next.Item2 + 1);
+                if (TileRightExists(tilePos) && grid[GridIndexOf(right)] == TOPLEFT)
+                    if (visited.Contains(right))
+                        return true;
+                    else
+                        stack.Add((next, rightNext));
+
+                var aboveRight = (next.Item1, next.Item2 - 1);
+                var aboveRightNext = (next.Item1 + 1, next.Item2 - 1);
+                if (TileAboveExists(tilePos) && TileRightExists(tilePos) && grid[GridIndexOf(aboveRight)] == TOPRIGHT)
+                    if (visited.Contains(aboveRight))
+                        return true;
+                    else
+                        stack.Add((next, aboveRightNext));
+            }
+
+            return false;
+        }
+
         private bool HasCycleDFS(bool[] gridCache, (uint, uint) start) 
         {
             bool[] touched = new bool[GridWidth() * GridHeight()];
             Utils.Populate(touched, false);
 
+            // TODO: turn visited into a map
+            List<(uint, uint)> visited = new List<(uint, uint)>();
             List<((uint, uint), (uint, uint))> stack = new List<((uint, uint), (uint, uint))>();
-            var startLower = (start.Item1 + 1, start.Item2 + 1);
-            stack.Add( (start, startLower) );
-            stack.Add( (startLower, start) );
+
+            // evaluate starting diagonal in both directions
+            {
+                // figure out the locations of the starting verticies
+                (uint, uint) startNext;
+                if (grid[GridIndexOf(start)] == TOPRIGHT) {
+                    start = (start.Item1 + 1, start.Item2); // TODO: after turing start into a Vec2 class, add a method to move right one, like `(new Vec2 (10, 10)).Right()`
+                    startNext = (start.Item1 - 1, start.Item2 + 1); // TODO: create a NextOf() function, that takes in a Vec2 base & a Vec2 tilePos?
+                } else {
+                    startNext = (start.Item1 + 1, start.Item2 + 1);
+                }
+
+                var tilePos = TilePosOf(start, startNext);
+                visited.Add(tilePos);
+                gridCache[GridIndexOf(tilePos)] = true;
+
+                CheckAdjacent(stack, visited, start, startNext);
+                CheckAdjacent(stack, visited, startNext, start);
+            }
 
             while (stack.Count != 0) 
             {
                 // TODO: find a c# stack ADT
                 // NOTE: currLower defines the direction
-                ((uint, uint) curr, (uint, uint) currLower) = stack[stack.Count - 1];
+                ((uint, uint) curr, (uint, uint) next) = stack[stack.Count - 1];
                 stack.RemoveAt(stack.Count - 1);
 
-                // add adjacent tiles if possible
-                byte currentTileKind = grid[curr.Item1 + curr.Item2 * GridWidth()];
-                if (currentTileKind == TOPLEFT)
-                {
-                    // TODO: add other tiles, if there's a duplicate, get rekt
+                var tilePos = TilePosOf(curr, next);
+                visited.Add(tilePos);
+                gridCache[GridIndexOf(tilePos)] = true;
 
-                }
-                else if (currentTileKind == TOPRIGHT) 
-                { 
-                
-                }
+                bool cycle = CheckAdjacent(stack, visited, curr, next);
+                if (cycle) 
+                    return true;
             }
 
             return false;
