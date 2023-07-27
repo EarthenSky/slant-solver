@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using SlantSolver.Types;
+
 namespace SlantSolver
 {
     public class Solver
@@ -32,10 +34,10 @@ namespace SlantSolver
             this.size = size;
             this.puzzleString = puzzle;
 
-            this.grid = new byte[size.Item1 * size.Item2];
+            this.grid = new byte[GridWidth() * GridHeight()];
             Utils.Populate(this.grid, EMPTY);
 
-            this.vertices = new byte[(size.Item1 + 1) * (size.Item2 + 1)];
+            this.vertices = new byte[VertexWidth() * VertexHeight()];
             Utils.Populate(this.vertices, NONE);
 
             this.ParsePuzzle(size, puzzle);
@@ -45,14 +47,13 @@ namespace SlantSolver
             Console.OutputEncoding = Encoding.Unicode;
             Console.WriteLine("The current puzzle: ");
             Console.WriteLine(this.puzzleString);
-            for (int y = 0; y < size.Item2 + 1; y++) {
-                for (int x = 0; x < size.Item1 + 1; x++) {
-                    var curr = this.vertices[y * (size.Item2 + 1) + x];
+            for (uint y = 0; y < size.Item2 + 1; y++) {
+                for (uint x = 0; x < size.Item1 + 1; x++) {
+                    byte curr = vertices[x + y * VertexWidth()];
                     if (curr != NONE) { 
                         Console.Write(curr.ToString());
                         if (x != size.Item1) Console.Write("---");
                     } else {
-                        // TODO: display diagonals
                         Console.Write(' ');
                         if (x != size.Item1) Console.Write("---");
                     }
@@ -61,12 +62,12 @@ namespace SlantSolver
                 Console.WriteLine("");
 
                 if (y != size.Item2) {
-                    for (int x = 0; x < size.Item1 + 1; x++)
+                    for (uint x = 0; x < size.Item1 + 1; x++)
                     {
                         Console.Write('|');
                         if (x != size.Item1)
                         {                   
-                            byte value = grid[y * GridWidth() + x];
+                            byte value = grid[GridIndexOf(new Vec2(x, y))];
                             string token = value == EMPTY ? " " : (value == TOPLEFT ? "╲" : "╱");
                             Console.Write(" " + token + " ");
                         }
@@ -77,12 +78,7 @@ namespace SlantSolver
             }
         }
 
-        public void SolvePuzzle() 
-        { 
-        
-        }
-
-        // used for testing
+        /// For testing
         public void SetGrid(byte[] grid) 
         {
             if (grid.Length != size.Item1 * size.Item2) 
@@ -91,7 +87,7 @@ namespace SlantSolver
             this.grid = grid;
         }
 
-        // Determine if ths current puzzle is solved or not
+        /// Determine if ths current puzzle is solved or not
         public bool IsSolved()
         {
             // no empty cells
@@ -102,29 +98,50 @@ namespace SlantSolver
             return SatisfiesRules();
         }
 
+        public void SolvePuzzle()
+        {
+            // TODO: this
+        }
+
+        // ------------------------ //
+        // private helpers:
+
+        private uint GridHeight() => size.Item2;
+        private uint GridWidth() => size.Item1;
+        private uint VertexHeight() => size.Item2 + 1;
+        private uint VertexWidth() => size.Item1 + 1;
+
+        private uint GridIndexOf(Vec2 tile) => tile.x + tile.y * GridWidth();
+        private uint VertexIndexOf(Vec2 tile) => tile.x + tile.y * VertexWidth();
+
+        private bool TileAboveExists(Vec2 tile) => tile.y != 0;
+        private bool TileLeftExists(Vec2 tile) => tile.x != 0;
+        private bool TileRightExists(Vec2 tile) => tile.x != GridWidth() - 1;
+        private bool TileBelowExists(Vec2 tile) => tile.y != GridHeight() - 1;
+
+        /// this function determines the kind of tile given the start & end points of a diagonal
+        private byte TileKind(Vec2 first, Vec2 second) => grid[GridIndexOf(TilePosOf(first, second))];
+
+        /// This function takes a diagonal & turns it into the 'position' of the Tile the diagonal resides in
+        private Vec2 TilePosOf(Vec2 first, Vec2 second)
+        {
+            if (first.x > second.x && first.y > second.y)
+                return second;
+            else if (first.x < second.x && first.y < second.y)
+                return first;
+            else if (first.x > second.x && first.y < second.y)
+                return first.Left();
+            else if (first.x < second.x && first.y > second.y)
+                return second.Left();
+            else
+                throw new Exception("first and second do not form a diagonal: " + first.ToString() + " & " + second.ToString());
+        }
+
         // ------------------------ //
 
-        private uint GridHeight()
-        {
-            return size.Item2;
-        }
-        private uint GridWidth()
-        {
-            return size.Item1;
-        }
-
-        private uint VertexHeight() 
-        {
-            return size.Item2 + 1;
-        }
-        private uint VertexWidth()
-        {
-            return size.Item1 + 1;
-        }
-
-        // The seemingly widely accepted format for storing slant puzzles is to store a matrix of each crosshair.
-        // From left to right, each crosshair number is separated by the number of spaces indicated by the value of the letter in base 27 (probably)
-        // For example, no letter indicates that numbers are consecutive, while a represents 1 space, and b represents 2 spaces, etc.
+        /// The seemingly widely accepted format for storing slant puzzles is to store a matrix of each crosshair.
+        /// From left to right, each crosshair number is separated by the number of spaces indicated by the value of the letter in base 27 (probably)
+        /// For example, no letter indicates that numbers are consecutive, while a represents 1 space, and b represents 2 spaces, etc.
         private void ParsePuzzle((uint, uint) size, string puzzleString)
         {
             if (size.Item1 > 25 || size.Item2 > 25)
@@ -140,10 +157,10 @@ namespace SlantSolver
                 uint i = 0;
                 foreach (char ch in puzzleString)
                 {
-                    if (Char.IsDigit(ch))
+                    if (char.IsDigit(ch))
                     {
                         uint value = (uint)ch - (uint)'0';
-                        this.vertices[i] = (byte)value;
+                        vertices[i] = (byte)value;
                         i += 1;
                     }
                     else
@@ -156,8 +173,9 @@ namespace SlantSolver
             }
         }
 
-        // x, y are vertex coordinates 
-        private uint IncomingLines(uint x, uint y) {
+        private uint IncomingLines(Vec2 pos) {
+            // pos is vertex coordinates 
+            var (x, y) = (pos.x, pos.y);
             uint numIncoming = 0;
 
             // case: top left square exists    
@@ -179,8 +197,7 @@ namespace SlantSolver
             return numIncoming;
         }
 
-        // TODO: do DFS, but cache nodes
-        // determine if the current puzzle contains a loop of some kind
+        /// Determine if the current puzzle contains a loop of some kind
         private bool ContainsLoop() 
         {
             // contains true if this tile has been part of a tree / cycle that has been checked.
@@ -192,7 +209,7 @@ namespace SlantSolver
                 for (uint x = 0; x < GridWidth(); x++)
                 {
                     bool hasBeenChecked = gridCache[x + y * GridWidth()];
-                    if (!hasBeenChecked && this.HasCycleDFS(gridCache, (x, y)))
+                    if (!hasBeenChecked && HasCycleDFS(gridCache, new Vec2(x, y)))
                         return true;
                 }
             }
@@ -200,184 +217,149 @@ namespace SlantSolver
             return false;
         }
 
-        private bool TileAboveExists((uint, uint) tile) => tile.Item2 != 0;
-        private bool TileLeftExists((uint, uint) tile) => tile.Item1 != 0;
-        private bool TileRightExists((uint, uint) tile) => tile.Item1 != GridWidth() - 1;
-        private bool TileBelowExists((uint, uint) tile) => tile.Item2 != GridHeight() - 1;
-
-        private uint GridIndexOf((uint, uint) tile) => tile.Item1 + tile.Item2 * GridWidth();
-         
-        /// this function determines the kind of tile given the start & end points of a diagonal
-        private byte TileKind((uint, uint) first, (uint, uint) second) => grid[GridIndexOf(TilePosOf(first, second))];
-
-        /// This function takes a diagonal & turns it into the 'position' of the Tile the diagonal resides in
-        private (uint, uint) TilePosOf((uint, uint) first, (uint, uint) second)
-        {
-            if (first.Item1 > second.Item1 && first.Item2 > second.Item2)
-            {
-                return (second.Item1, second.Item2);
-            }
-            else if (first.Item1 < second.Item1 && first.Item2 < second.Item2)
-            {
-                return (first.Item1, first.Item2);
-            }
-            else if (first.Item1 > second.Item1 && first.Item2 < second.Item2)
-            {
-                return ((first.Item1 - 1), first.Item2);
-            }
-            else if (first.Item1 < second.Item1 && first.Item2 > second.Item2)
-            {
-                return ((second.Item1 - 1), second.Item2);
-            }
-            else
-            {
-                throw new Exception("first and second do not form a diagonal: " + first.ToString() + " & " + second.ToString());
-            }
-        }
-
         /// This function takes the the start & end points of a diagonal, and determines if any other 
         /// tiles are connected & unvisisted, adding them to the stack if so.
         /// 
         /// The return value represents whether a cycle has been detected or not
         private bool CheckAdjacent(
-            List<((uint, uint), (uint, uint))> stack, 
-            List<(uint, uint)> visited, 
-            (uint, uint) curr, 
-            (uint, uint) next
+            Stack<(Vec2, Vec2)> stack, 
+            List<Vec2> visited, 
+            Vec2 curr,
+            Vec2 next
         ) {
             // NOTE: there is probably some way to generalize this code better, but the fact that it's
             // partially unrolled should count for a bit of performance!
 
             // add adjacent tiles if possible
-            bool isNextBelow = next.Item2 > curr.Item2;
+            bool isNextBelow = next.y > curr.y;
             byte currentTileKind = TileKind(curr, next);
             var tilePos = TilePosOf(curr, next);
             if (currentTileKind == TOPLEFT && isNextBelow)
             {
-                var below = (next.Item1 - 1, next.Item2);
-                var belowNext = (next.Item1 - 1, next.Item2 + 1);
+                var below = next.Left();
+                var belowNext = next.Left().Down();
                 if (TileBelowExists(tilePos) && grid[GridIndexOf(below)] == TOPRIGHT)
                     if (visited.Contains(below))
                         return true;
                     else
-                        stack.Add((next, belowNext));
+                        stack.Push((next, belowNext));
 
-                var right = (next.Item1, next.Item2 - 1);
-                var rightNext = (next.Item1 + 1, next.Item2 - 1);
+                var right = next.Up();
+                var rightNext = next.Up().Right();
                 if (TileRightExists(tilePos) && grid[GridIndexOf(right)] == TOPRIGHT)
                     if (visited.Contains(right))
                         return true;
                     else
-                        stack.Add((next, rightNext));
+                        stack.Push((next, rightNext));
 
-                var belowRight = (next.Item1, next.Item2);
-                var belowRightNext = (next.Item1 + 1, next.Item2 + 1);
+                var belowRight = next;
+                var belowRightNext = next.Right().Down();
                 if (TileBelowExists(tilePos) && TileRightExists(tilePos) && grid[GridIndexOf(belowRight)] == TOPLEFT)
                     if (visited.Contains(belowRight))
                         return true;
                     else
-                        stack.Add((next, belowRightNext));
+                        stack.Push((next, belowRightNext));
             }
             else if (currentTileKind == TOPLEFT && !isNextBelow)
             {
-                var above = (next.Item1, next.Item2 - 1);
-                var aboveNext = (next.Item1 + 1, next.Item2 - 1);
+                var above = next.Up();
+                var aboveNext = next.Up().Right();
                 if (TileAboveExists(tilePos) && grid[GridIndexOf(above)] == TOPRIGHT)
                     if (visited.Contains(above))
                         return true;
                     else
-                        stack.Add((next, aboveNext));
+                        stack.Push((next, aboveNext));
 
-                var left = (next.Item1 - 1, next.Item2);
-                var leftNext = (next.Item1 - 1, next.Item2 + 1);
+                var left = next.Left();
+                var leftNext = next.Left().Down();
                 if (TileLeftExists(tilePos) && grid[GridIndexOf(left)] == TOPRIGHT)
                     if (visited.Contains(left))
                         return true;
                     else
-                        stack.Add((next, leftNext));
+                        stack.Push((next, leftNext));
 
-                var aboveLeft = (next.Item1 - 1, next.Item2 - 1);
-                var aboveLeftNext = (next.Item1 - 1, next.Item2 - 1);
+                var aboveLeft = next.Left().Up();  
+                var aboveLeftNext = next.Left().Up();  
                 if (TileAboveExists(tilePos) && TileLeftExists(tilePos) && grid[GridIndexOf(aboveLeft)] == TOPLEFT)
                     if (visited.Contains(aboveLeft))
                         return true;
                     else
-                        stack.Add((next, aboveLeftNext));
+                        stack.Push((next, aboveLeftNext));
             }
             else if (currentTileKind == TOPRIGHT && isNextBelow)
             {
-                var below = (next.Item1, next.Item2);
-                var belowNext = (next.Item1 + 1, next.Item2 + 1);
+                var below = next;
+                var belowNext = next.Down().Right();
                 if (TileBelowExists(tilePos) && grid[GridIndexOf(below)] == TOPLEFT)
                     if (visited.Contains(below))
                         return true;
                     else
-                        stack.Add((next, belowNext));
+                        stack.Push((next, belowNext));
 
-                var left = (next.Item1 - 1, next.Item2 - 1);
-                var leftNext = (next.Item1 - 1, next.Item2 - 1);
+                var left = next.Left().Up(); 
+                var leftNext = next.Left().Up();
                 if (TileLeftExists(tilePos) && grid[GridIndexOf(left)] == TOPLEFT)
                     if (visited.Contains(left))
                         return true;
                     else
-                        stack.Add((next, leftNext));
+                        stack.Push((next, leftNext));
 
-                var belowLeft = (next.Item1 - 1, next.Item2);
-                var belowLeftNext = (next.Item1 - 1, next.Item2 + 1);
+                var belowLeft = next.Left();
+                var belowLeftNext = next.Left().Down();
                 if (TileBelowExists(tilePos) && TileLeftExists(tilePos) && grid[GridIndexOf(belowLeft)] == TOPRIGHT)
                     if (visited.Contains(belowLeft))
                         return true;
                     else
-                        stack.Add((next, belowLeftNext));
+                        stack.Push((next, belowLeftNext));
             }
             else if (currentTileKind == TOPRIGHT && !isNextBelow)
             {
-                var above = (next.Item1 - 1, next.Item2 - 1);
-                var aboveNext = (next.Item1 - 1, next.Item2 - 1);
+                var above = next.Left().Up(); 
+                var aboveNext = next.Left().Up();
                 if (TileAboveExists(tilePos) && grid[GridIndexOf(above)] == TOPLEFT)
                     if (visited.Contains(above))
                         return true;
                     else
-                        stack.Add((next, aboveNext));
+                        stack.Push((next, aboveNext));
 
-                var right = (next.Item1, next.Item2);
-                var rightNext = (next.Item1 + 1, next.Item2 + 1);
+                var right = next;
+                var rightNext = next.Right().Down();
                 if (TileRightExists(tilePos) && grid[GridIndexOf(right)] == TOPLEFT)
                     if (visited.Contains(right))
                         return true;
                     else
-                        stack.Add((next, rightNext));
+                        stack.Push((next, rightNext));
 
-                var aboveRight = (next.Item1, next.Item2 - 1);
-                var aboveRightNext = (next.Item1 + 1, next.Item2 - 1);
+                var aboveRight = next.Up();
+                var aboveRightNext = next.Up().Right();
                 if (TileAboveExists(tilePos) && TileRightExists(tilePos) && grid[GridIndexOf(aboveRight)] == TOPRIGHT)
                     if (visited.Contains(aboveRight))
                         return true;
                     else
-                        stack.Add((next, aboveRightNext));
+                        stack.Push((next, aboveRightNext));
             }
 
             return false;
         }
 
-        private bool HasCycleDFS(bool[] gridCache, (uint, uint) start) 
+        private bool HasCycleDFS(bool[] gridCache, Vec2 start) 
         {
             bool[] touched = new bool[GridWidth() * GridHeight()];
             Utils.Populate(touched, false);
 
             // TODO: turn visited into a map
-            List<(uint, uint)> visited = new List<(uint, uint)>();
-            List<((uint, uint), (uint, uint))> stack = new List<((uint, uint), (uint, uint))>();
+            Stack<(Vec2, Vec2)> stack = new Stack<(Vec2, Vec2)>();
+            List<Vec2> visited = new List<Vec2>();
 
             // evaluate starting diagonal in both directions
             {
                 // figure out the locations of the starting verticies
-                (uint, uint) startNext;
+                Vec2 startNext;
                 if (grid[GridIndexOf(start)] == TOPRIGHT) {
-                    start = (start.Item1 + 1, start.Item2); // TODO: after turing start into a Vec2 class, add a method to move right one, like `(new Vec2 (10, 10)).Right()`
-                    startNext = (start.Item1 - 1, start.Item2 + 1); // TODO: create a NextOf() function, that takes in a Vec2 base & a Vec2 tilePos?
+                    start = start.Right();
+                    startNext = start.Left().Down();
                 } else {
-                    startNext = (start.Item1 + 1, start.Item2 + 1);
+                    startNext = start.Right().Down();  
                 }
 
                 var tilePos = TilePosOf(start, startNext);
@@ -392,8 +374,7 @@ namespace SlantSolver
             {
                 // TODO: find a c# stack ADT
                 // NOTE: currLower defines the direction
-                ((uint, uint) curr, (uint, uint) next) = stack[stack.Count - 1];
-                stack.RemoveAt(stack.Count - 1);
+                (Vec2 curr, Vec2 next) = stack.Pop();
 
                 var tilePos = TilePosOf(curr, next);
                 visited.Add(tilePos);
@@ -415,14 +396,10 @@ namespace SlantSolver
                 {
                     byte circle = this.vertices[y * VertexWidth() + x];
                     if (circle != NONE)
-                    {
-                        if (IncomingLines(x, y) != circle)
+                        if (IncomingLines(new Vec2(x, y)) != circle)
                             return false;
-                    }
                     else
-                    {
                         continue;
-                    }
                 }
             }
 

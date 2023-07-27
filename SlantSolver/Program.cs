@@ -24,7 +24,6 @@ namespace SlantSolver
             Console.WriteLine("\nIsSolved: " + solver.IsSolved().ToString());
             solver.PrintPuzzle();
              
-            // TODO: this should be false, due to loop detection
             solver.SetGrid(new byte[] {
                 1,1,1,2,1,
                 1,1,2,1,2,

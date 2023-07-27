@@ -38,7 +38,11 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Solver.cs" />
+    <Compile Include="Types\Vec2.cs" />
     <Compile Include="Utils.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
