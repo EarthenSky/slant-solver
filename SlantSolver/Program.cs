@@ -11,7 +11,7 @@ namespace SlantSolver
         [STAThread]
         static void Main(string[] args)
         {
-            //Program.TestCycleDetection();
+            Program.TestCycleDetection();
             Program.TestSolver();
 
             // wait before exiting

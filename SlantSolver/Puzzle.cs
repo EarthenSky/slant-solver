@@ -53,6 +53,13 @@ namespace SlantSolver
             this.grid = grid;
             this.vertices = vertices;
         }
+        public Puzzle(Puzzle puzzle)
+        {
+            this.size = puzzle.size;
+            this.puzzleString = puzzle.puzzleString;
+            this.grid = puzzle.grid.Clone() as byte[];
+            this.vertices = puzzle.vertices.Clone() as byte[];
+        }
 
         public void Display()
         {
@@ -188,6 +195,11 @@ namespace SlantSolver
         public bool TileLeftExists(Vec2 tile) => tile.x != 0;
         public bool TileRightExists(Vec2 tile) => tile.x != GridWidth() - 1;
         public bool TileBelowExists(Vec2 tile) => tile.y != GridHeight() - 1;
+
+        public bool VertexUpLeftExists(Vec2 tile) => tile.y != 0 && tile.x != 0;
+        public bool VertexUpRightExists(Vec2 tile) => tile.y != 0 && (tile.x != VertexWidth() - 1);
+        public bool VertexDownLeftExists(Vec2 tile) => (tile.y != VertexHeight() - 1) && tile.x != 0;
+        public bool VertexDownRightExists(Vec2 tile) => (tile.y != VertexHeight() - 1) && (tile.x != VertexWidth() - 1);
 
         /// this function determines the kind of tile given the start & end points of a diagonal
         public byte TileKind(Vec2 first, Vec2 second) => grid[GridIndexOf(TilePosOf(first, second))];
