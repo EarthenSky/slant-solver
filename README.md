@@ -50,3 +50,11 @@
 # Cycle detection algorithm:
 - Cycle detection can be achieved through a simple DFS on each potential tree in the forest of the map
 - cycle detection can be optimized. Certain lines cannot be part of a cycle no matter what, and can be ignored. For example, any line that touches the edge of the board cannot be part of a cycle, as well as a line that intersects a 3 (or an implied 3)
+
+# optimization:
+- in order to solve puzzles fast, we've decided to use sycl to run some of the compute on the gpu. 
+- We do this in the following steps:
+  - 0. do basic solving
+  - 1. send the puzzles to the GPU
+  - 2. do recursive solving and cycle detection
+  - 3. send the result back
