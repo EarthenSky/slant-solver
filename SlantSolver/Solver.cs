@@ -46,13 +46,21 @@ namespace SlantSolver
         // -------------------- //
 
         public Puzzle Solve() {
-            ApplyEdgePattern();
+            CheckEdgePattern();
+            CheckConstantCircles();
+
+            bool didChange = true;
+            while (didChange) {
+                didChange = false;
+                if (CheckCircles()) { didChange = true; }
+                if (CheckCycles()) { didChange = true; }
+            }
 
             return puzzle;
         }
 
         /// This function checks the edges for 2s or 0s, or 1s in the corner and fills them in
-        private bool ApplyEdgePattern() {
+        private bool CheckEdgePattern() {
             for (uint x = 0; x < puzzle.VertexWidth(); x++) {
                 var curr = new Vec2(x, 0);
                 var circle = puzzle.vertices[puzzle.VertexIndexOf(curr)];
@@ -117,6 +125,134 @@ namespace SlantSolver
                 puzzle.grid[puzzle.GridWidth() * puzzle.GridHeight() - 1] = Puzzle.TOPLEFT;
 
             return false;
+        }
+
+        private void CheckConstantCircles() {
+            for (uint y = 0; y < puzzle.VertexHeight(); y++)
+            {
+                for (uint x = 0; x < puzzle.VertexWidth(); x++)
+                {
+                    var vertex = new Vec2(x, y);
+                    var curr = puzzle.vertices[puzzle.VertexIndexOf(vertex)];
+                    var (_ingoing, _passing, empty) = puzzle.GetSurrounding(vertex);
+
+                    if (empty == 0)
+                        continue;
+
+                    switch (curr)
+                    {
+                        case 0: { puzzle.FillSurrounding(vertex, false); break; }
+                        case 4: { puzzle.FillSurrounding(vertex, true); break; }
+                        default: break;
+                    }
+                }
+            }
+        }
+        
+        // TODO: store locations we can ignore via a jump table -> the issue here will be minimizing information in the cache
+        // TODO: change name to "ApplyXRule"
+        private bool CheckCircles() {
+            bool madeChange = false;
+
+            for (uint y = 0; y < puzzle.VertexHeight(); y++) 
+            {
+                for (uint x = 0; x < puzzle.VertexWidth(); x++) 
+                {
+                    var vertex = new Vec2(x, y);
+                    var curr = puzzle.vertices[puzzle.VertexIndexOf(vertex)];
+                    var (ingoing, passing, empty) = puzzle.GetSurrounding(vertex);
+
+                    if (empty == 0 || curr == Puzzle.NONE) 
+                        continue;
+
+                    switch (curr)
+                    {
+                        case 1:
+                        {
+                            var total = ingoing + passing + empty;
+                            if (passing == (total - 1))
+                            {
+                                puzzle.FillSurrounding(vertex, true);
+                                madeChange = true;
+                            }
+                            else if (ingoing == 1)
+                            {
+                                puzzle.FillSurrounding(vertex, false);
+                                madeChange = true;
+                            }
+                            break;
+                        }
+                        case 2:
+                        {
+                            if (passing == 2)
+                            {
+                                puzzle.FillSurrounding(vertex, true);
+                                madeChange = true;
+                            }
+                            else if (ingoing == 2)
+                            {
+                                puzzle.FillSurrounding(vertex, false);
+                                madeChange = true;
+                            }
+                            break;
+                        }
+                        case 3:
+                        {
+                            if (passing == 1)
+                            {
+                                puzzle.FillSurrounding(vertex, true);
+                                madeChange = true;
+                            }
+                            else if (ingoing == 3)
+                            {
+                                puzzle.FillSurrounding(vertex, false);
+                                madeChange = true;
+                            }
+                            break;
+                        }
+                        default:
+                        {
+                            throw new Exception(curr.ToString() + " should have been solved earlier in the solution");
+                        }
+                    }
+                }
+            }
+
+            return madeChange;
+        }
+
+        private bool CheckCycles() {
+            bool madeChange = false;
+
+            for (uint y = 0; y < puzzle.GridHeight(); y++)
+            {
+                for (uint x = 0; x < puzzle.GridWidth(); x++)
+                {
+                    var tile = new Vec2(x, y);
+                    var curr = puzzle.grid[puzzle.GridIndexOf(tile)];
+                    if (curr == Puzzle.EMPTY_CELL)
+                    {
+                        puzzle.grid[puzzle.GridIndexOf(tile)] = Puzzle.TOPLEFT;
+                        if (puzzle.ContainsCycle()) {
+                            puzzle.grid[puzzle.GridIndexOf(tile)] = Puzzle.TOPRIGHT;
+                            madeChange = true;
+                            continue;
+                        }
+
+                        puzzle.grid[puzzle.GridIndexOf(tile)] = Puzzle.TOPRIGHT;
+                        if (puzzle.ContainsCycle()) {
+                            puzzle.grid[puzzle.GridIndexOf(tile)] = Puzzle.TOPLEFT;
+                            madeChange = true;
+                            continue;
+                        }
+
+                        puzzle.grid[puzzle.GridIndexOf(tile)] = Puzzle.EMPTY_CELL;
+                    }
+                    else continue;
+                }
+            }
+
+            return madeChange;
         }
     }
 }

@@ -30,12 +30,13 @@
 - [x] a two on the edge must have two items not touching it
 - [x] a 1 in the corner must have one incoming line
 
-- [ ] a zero must have all passing lines
-- [ ] a 4 must have all incoming lines
-- [ ] if a 2 has two incoming lines, the other two lines are outgoing
-- [ ] if a 1 has one incoming line or three passing lines, then the others tiles are solved
-- [ ] if a 3 has one passing line or three incoming lines, then the others tiles are solved
-- [ ] generalize this to edges
+- [x] a zero must have all passing lines
+- [x] a 4 must have all incoming lines
+
+- [x] if a 2 has two incoming lines, the other two lines are outgoing
+- [x] if a 1 has one incoming line or three passing lines, then the others tiles are solved
+- [x] if a 3 has one passing line or three incoming lines, then the others tiles are solved
+- [x] generalize this to edges
 
 - [ ] two touching 1s makes a dome pattern
 - [ ] two orthogonally touching 3s makes a spike pattern

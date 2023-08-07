@@ -18,7 +18,7 @@ namespace SlantSolver
         public const byte FOUR = 4;
 
         public const byte EMPTY_CELL = 0;
-        public const byte TOPLEFT = 1;
+        public const byte TOPLEFT = 1; // TODO: add underscore
         public const byte TOPRIGHT = 2;
 
         // TODO: convert into a Size(.width=uint, .height=uint) class
@@ -191,10 +191,14 @@ namespace SlantSolver
         public uint GridIndexOf(Vec2 tile) => tile.x + tile.y * GridWidth();
         public uint VertexIndexOf(Vec2 tile) => tile.x + tile.y * VertexWidth();
 
+        // TODO: fix working of above to Up -> be consistent! (Up down left right)
         public bool TileAboveExists(Vec2 tile) => tile.y != 0;
         public bool TileLeftExists(Vec2 tile) => tile.x != 0;
         public bool TileRightExists(Vec2 tile) => tile.x != GridWidth() - 1;
         public bool TileBelowExists(Vec2 tile) => tile.y != GridHeight() - 1;
+        
+        public bool TileInBounds(Vec2 tile) => tile.y >= 0 && tile.y <= (GridHeight() - 1)
+                                            && tile.x >= 0 && tile.x <= (GridWidth() - 1);
 
         public bool VertexUpLeftExists(Vec2 tile) => tile.y != 0 && tile.x != 0;
         public bool VertexUpRightExists(Vec2 tile) => tile.y != 0 && (tile.x != VertexWidth() - 1);
@@ -369,6 +373,63 @@ namespace SlantSolver
             }
 
             return false;
+        }
+
+        // TODO: make Vec2 of type int, not uint, so that we don't have weird issues at x=0, y=0 boundaries
+        // ingoing vs passing -> TODO: improve performance by breaking this function up or making it a table or something
+        public void FillSurrounding(Vec2 vertex, bool isIngoing) {
+            // when converting a vertex into a tile, we take its bottom right tile.
+            if (TileInBounds(vertex) && grid[GridIndexOf(vertex)] == EMPTY_CELL)
+                grid[GridIndexOf(vertex)] = isIngoing ? TOPLEFT : TOPRIGHT;
+            
+            if (TileLeftExists(vertex) && TileInBounds(vertex.Left()) && grid[GridIndexOf(vertex.Left())] == EMPTY_CELL)
+                grid[GridIndexOf(vertex.Left())] = isIngoing ? TOPRIGHT : TOPLEFT;
+
+            if (TileAboveExists(vertex) && TileInBounds(vertex.Up()) && grid[GridIndexOf(vertex.Up())] == EMPTY_CELL)
+                grid[GridIndexOf(vertex.Up())] = isIngoing ? TOPRIGHT : TOPLEFT;
+
+            if (TileLeftExists(vertex) && TileAboveExists(vertex) && TileInBounds(vertex.Left().Up()) && grid[GridIndexOf(vertex.Left().Up())] == EMPTY_CELL)
+                grid[GridIndexOf(vertex.Left().Up())] = isIngoing ? TOPLEFT : TOPRIGHT;
+        }
+
+        public (uint, uint, uint) GetSurrounding(Vec2 vertex) {
+            uint ingoing = 0;
+            uint passing = 0;
+            uint empty = 0;
+
+            if (TileInBounds(vertex))
+            {
+                var tile = grid[GridIndexOf(vertex)];
+                if (tile == TOPLEFT) ingoing++;
+                else if (tile == TOPRIGHT) passing++;
+                else empty++;
+            }
+
+            if (TileLeftExists(vertex) && TileInBounds(vertex.Left())) 
+            {
+                var tile = grid[GridIndexOf(vertex.Left())];
+                if (tile == TOPRIGHT) ingoing++;
+                else if (tile == TOPLEFT) passing++;
+                else empty++;
+            }
+
+            if (TileAboveExists(vertex) && TileInBounds(vertex.Up()))
+            {
+                var tile = grid[GridIndexOf(vertex.Up())];
+                if (tile == TOPRIGHT) ingoing++;
+                else if (tile == TOPLEFT) passing++;
+                else empty++;
+            }
+
+            if (TileLeftExists(vertex) && TileAboveExists(vertex) && TileInBounds(vertex.Left().Up()))
+            {
+                var tile = grid[GridIndexOf(vertex.Left().Up())];
+                if (tile == TOPLEFT) ingoing++;
+                else if (tile == TOPRIGHT) passing++;
+                else empty++;
+            }
+
+            return (ingoing, passing, empty);
         }
 
         // ------------------------ //

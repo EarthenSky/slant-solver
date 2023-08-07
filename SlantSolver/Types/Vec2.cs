@@ -17,5 +17,7 @@ namespace SlantSolver.Types
         public Vec2 Up() => new Vec2(x, y - 1);
         public Vec2 Down() => new Vec2(x, y + 1);
 
+        public override String ToString() => "Vec2 { x: " + x.ToString() + ", y: " + y.ToString() + " }";
+
     }
 }
